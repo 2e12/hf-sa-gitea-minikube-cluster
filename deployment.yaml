@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: gitea
+  name: gitea-vol
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   capacity:
     storage: 1Gi
   hostPath:
@@ -15,21 +15,21 @@ spec:
 apiVersion:  v1
 kind: PersistentVolumeClaim
 metadata:
-  name: gitea
+  name: gitea-claim
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
-  volumeName: gitea
+  volumeName: gitea-vol
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gitea
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: gitea
@@ -47,9 +47,25 @@ spec:
           - name: USER_GID
             value: "1000"
           - name: APP_NAME
-            value: "BeutlerGit"
+            value: "Git"
           - name: RUN_MODE
             value: "prod"
+          - name: GITEA__database__DB_TYPE
+            value: "postgres"
+          - name: GITEA__database__HOST
+            value: "postgres"
+          - name: GITEA__database__NAME
+            value: "giteaprod"
+          - name: GITEA__database__USER
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_USER
+                name: postgres
+          - name: GITEA__database__PASSWD
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_PASSWORD
+                name: postgres
           resources:
             limits:
               memory: 1Gi
@@ -60,12 +76,12 @@ spec:
             - containerPort: 22
               name: gitea-ssh
           volumeMounts:
-            - name: gitea
+            - name: gitea-data
               mountPath: /data
       volumes:
-      - name: gitea
+      - name: gitea-data
         persistentVolumeClaim:
-          claimName: gitea
+          claimName: gitea-claim
 ---
 apiVersion: v1
 kind: Service
@@ -113,7 +129,7 @@ metadata:
   name: postgres
 type: Opaque
 data:
-  POSTGRES_USER: cG9zdGdyZXM=     # printf postgres | base64
+  POSTGRES_USER: Z2l0ZWFwcm9k     # printf giteaprod | base64
   POSTGRES_PASSWORD: cGFzc3dvcmQ= # printf password | base64
 ---
 apiVersion: apps/v1
