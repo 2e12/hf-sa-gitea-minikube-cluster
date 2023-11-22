@@ -1,6 +1,12 @@
 ### Start Cluster
-minikube start --nodes 4
+```
+minikube start --nodes 3
+```
 ### Apply changes
+```
 kubectl apply --filename deployment.yaml
+```
 ### Start Service
-minikube service hedge-doc
+```
+minikube service gitea
+```
