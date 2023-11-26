@@ -88,13 +88,33 @@ kind: Service
 metadata:
   name: gitea
 spec:
-  type: NodePort
   selector:
-     app: gitea
+    app: gitea
   ports:
-  - port: 80
+  - name: gitea-gui
+    port: 3000
     targetPort: 3000
-
+  - name: gitea-ssh
+    port: 22
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitea
+  #annotations:
+  #  nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+    - host: beutler.git.test
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gitea
+                port:
+                  name: gitea-gui
 ---
 # Database Configuration
 # Source https://gist.github.com/ivanbrennan/cf20e26de6e7cbf517d101e7cc9d4ca0
